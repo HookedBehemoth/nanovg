@@ -197,6 +197,12 @@ DkRenderer::~DkRenderer()
     this->textures.clear();
 }
 
+void DkRenderer::UpdateViewport(unsigned int viewWidth, unsigned int viewHeight)
+{
+    this->viewWidth = viewWidth;
+    this->viewHeight = viewHeight;
+}
+
 CMemPool::Handle DkRenderer::CreateDataBuffer(const void *data, size_t size)
 {
     auto buffer = this->dataMemPool.allocate(size);
@@ -439,8 +445,6 @@ int DkRenderer::Create(DKNVGcontext *ctx)
 
 std::shared_ptr<Texture> DkRenderer::FindTexture(int id)
 {
-    OutputDebugString("Finding texture %d...\n", id);
-
     auto it = std::find_if(this->textures.begin(), this->textures.end(), [id](const auto &texture) {
         return texture->GetId() == id;
     });
@@ -576,21 +580,22 @@ void DkRenderer::Flush(DKNVGcontext *ctx)
             // Perform blending
             this->dynCmdBuf.bindBlendStates(0, { dk::BlendState{}.setFactors(static_cast<DkBlendFactor>(call->blendFunc.srcRGB), static_cast<DkBlendFactor>(call->blendFunc.dstRGB), static_cast<DkBlendFactor>(call->blendFunc.srcAlpha), static_cast<DkBlendFactor>(call->blendFunc.dstRGB)) });
 
-            if (call->type == DKNVG_FILL)
+            switch (call->type)
             {
+            case DKNVG_FILL:
                 this->DrawFill(ctx, call);
-            }
-            else if (call->type == DKNVG_CONVEXFILL)
-            {
+                break;
+            case DKNVG_CONVEXFILL:
                 this->DrawConvexFill(ctx, call);
-            }
-            else if (call->type == DKNVG_STROKE)
-            {
+                break;
+            case DKNVG_STROKE:
                 this->DrawStroke(ctx, call);
-            }
-            else if (call->type == DKNVG_TRIANGLES)
-            {
+                break;
+            case DKNVG_TRIANGLES:
                 this->DrawTriangles(ctx, call);
+                break;
+            default:
+                break;
             }
         }
 

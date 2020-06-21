@@ -162,8 +162,8 @@ class DkRenderer
 		static constexpr unsigned int MaxImages = 1;
 
         // From the application
-		const unsigned int viewWidth;
-		const unsigned int viewHeight;
+		unsigned int viewWidth;
+		unsigned int viewHeight;
 
         dk::Device device;
         dk::Queue queue;
@@ -202,6 +202,8 @@ class DkRenderer
     public:
         DkRenderer(unsigned int viewWidth, unsigned int viewHeight, dk::Device device, dk::Queue queue, CMemPool &imageMemPool, CMemPool &codeMemPool, CMemPool &dataMemPool);
         ~DkRenderer();
+
+		void UpdateViewport(unsigned int viewWidth, unsigned int viewHeight);
 
 		int Create(DKNVGcontext *ctx);
 		int CreateTexture(DKNVGcontext *ctx, int type, int w, int h, int imageFlags, const unsigned char *data);

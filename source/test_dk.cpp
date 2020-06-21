@@ -63,7 +63,7 @@ class DkTest final : public CApplication
     static constexpr unsigned NumFramebuffers = 2;
     uint32_t framebufferWidth = 1280;
     uint32_t framebufferHeight = 720;
-    float windowScale = 1.5f;
+    float windowScale = 1.f;
     static constexpr unsigned StaticCmdSize = 0x1000;
 
     dk::UniqueDevice device;
@@ -99,6 +99,7 @@ public:
     DkTest()
     {
         chooseFramebufferSize(framebufferWidth, framebufferHeight, appletGetOperationMode());
+        windowScale = static_cast<float>(framebufferWidth) / 1280.f;
 
         // Create the deko3d device
         device = dk::DeviceMaker{}.setCbDebug(OutputDkDebug).create();
@@ -154,7 +155,7 @@ public:
 
     void createFramebufferResources()
     {
-      // Create layout for the depth buffer
+        // Create layout for the depth buffer
         dk::ImageLayout layout_depthbuffer;
         dk::ImageLayoutMaker{device}
             .setFlags(DkImageFlags_UsageRender | DkImageFlags_HwCompression)
@@ -235,7 +236,7 @@ public:
         cmdbuf.setScissors(0, { { 0, 0, framebufferWidth, framebufferHeight } });
 
         // Clear the color and depth buffers
-        cmdbuf.clearColor(0, DkColorMask_RGBA, 0.2f, 0.3f, 0.3f, 1.0f);
+        cmdbuf.clearColor(0, DkColorMask_RGBA, 0.3f, 0.3f, 0.32f, 1.0f);
         cmdbuf.clearDepthStencil(true, 1.0f, 0xFF, 0);
 
         // Bind required state
@@ -263,18 +264,21 @@ public:
         // Acquire a framebuffer from the swapchain (and wait for it to be available)
         int slot = queue.acquireImage(swapchain);
 
+        queue.waitIdle();
+
         // Run the command list that attaches said framebuffer to the queue
         queue.submitCommands(framebuffer_cmdlists[slot]);
 
         // Run the main rendering command list
         queue.submitCommands(render_cmdlist);
-        
-        nvgBeginFrame(vg, framebufferWidth, framebufferHeight, 1.f);
+
+        nvgBeginFrame(vg, framebufferWidth, framebufferHeight, float(framebufferWidth)/float(framebufferHeight));
         nvgScale(vg, windowScale, windowScale);
         {
-		    renderDemo(vg, 0,0, 1280, 720, static_cast<float>(ns) / 1000 / 1000 / 1000, blowup, &data);
+            renderDemo(vg, 0,0, 1280, 720, static_cast<float>(ns) / 1000 / 1000 / 1000, blowup, &data);
         }
-		nvgEndFrame(vg);
+        nvgResetTransform(vg);
+        nvgEndFrame(vg);
 
         // Now that we are done rendering, present it to the screen
         queue.presentImage(swapchain, slot);
@@ -286,7 +290,10 @@ public:
 
         // Choose framebuffer size
         chooseFramebufferSize(framebufferWidth, framebufferHeight, mode);
-        printf("mode changed: %dx%d\n", framebufferWidth, framebufferHeight);
+        windowScale = static_cast<float>(framebufferWidth) / 1280.f;
+        printf("mode changed: %dx%d -> %f\n", framebufferWidth, framebufferHeight, windowScale);
+
+        this->renderer->UpdateViewport(framebufferWidth, framebufferHeight);
 
         // Recreate the framebuffers and its associated resources
         createFramebufferResources();
