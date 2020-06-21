@@ -220,6 +220,11 @@ void DkRenderer::SetUniforms(DKNVGcontext *ctx, int offset, int image)
     this->dynCmdBuf.pushConstants(this->fragUniformBuffer.getGpuAddr(), this->fragUniformBuffer.getSize(), 0, ctx->fragSize, ctx->uniforms + offset);
     this->dynCmdBuf.bindUniformBuffer(DkStage_Fragment, 0, this->fragUniformBuffer.getGpuAddr(), this->fragUniformBuffer.getSize());
 
+    if (image == 0)
+    {
+        return;
+    }
+
     auto texture = this->FindTexture(image);
 
     // Could not find a texture
@@ -436,17 +441,19 @@ std::shared_ptr<Texture> DkRenderer::FindTexture(int id)
 {
     OutputDebugString("Finding texture %d...\n", id);
 
-    for (auto it = this->textures.begin(); it != this->textures.end(); it++)
-    {
-        OutputDebugString("Texture entry id %d\n", (*it)->GetId());
-        if ((*it)->GetId() == id)
-        {
-            OutputDebugString("%d matches %d\n", (*it)->GetId(), id);
-            return *it;
-        }
-    }
+    auto it = std::find_if(this->textures.begin(), this->textures.end(), [id](const auto &texture) {
+        return texture->GetId() == id;
+    });
 
-    return nullptr;
+    if (it == this->textures.end())
+    {
+        OutputDebugString("Texture not found\n");
+        return nullptr;
+    }
+    else
+    {
+        return *it;
+    }
 }
 
 int DkRenderer::CreateTexture(DKNVGcontext *ctx, int type, int w, int h, int imageFlags, const unsigned char* data)
@@ -459,25 +466,24 @@ int DkRenderer::CreateTexture(DKNVGcontext *ctx, int type, int w, int h, int ima
     return texture->GetId();
 }
 
-int DkRenderer::DeleteTexture(DKNVGcontext *ctx, int image)
+int DkRenderer::DeleteTexture(DKNVGcontext *ctx, int id)
 {
-    bool found = false;
+    OutputDebugString("Deleting texture %d...\n", id);
 
-    for (auto it = this->textures.begin(); it != this->textures.end();)
+    auto it = std::find_if(this->textures.begin(), this->textures.end(), [id](const auto &texture) {
+        return texture->GetId() == id;
+    });
+
+    if (it == this->textures.end())
     {
-        // Remove textures with the given id
-        if ((*it)->GetId() == image)
-        {
-            it = this->textures.erase(it);
-            found = true;
-        }
-        else
-        {
-            ++it;
-        }
+        OutputDebugString("Texture not found\n");
+        return false;
     }
-
-    return found;
+    else
+    {
+        this->textures.erase(it);
+        return true;
+    }
 }
 
 int DkRenderer::UpdateTexture(DKNVGcontext *ctx, int image, int x, int y, int w, int h, const unsigned char *data)

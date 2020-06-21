@@ -700,13 +700,6 @@ namespace {
 
 int main(int argc, char* argv[])
 {
-    if (R_FAILED(twiliInitialize())) {
-        return 0;
-    }
-    if (R_FAILED(twiliBindStdio())) {
-        return 0;
-    }
-
     // Initialize EGL on the default window
     if (!initEgl(nwindowGetDefault()))
         return EXIT_FAILURE;
@@ -769,7 +762,6 @@ int main(int argc, char* argv[])
     // Deinitialize EGL
     deinitEgl();
 
-    twiliExit();
     return EXIT_SUCCESS;
 }
 #endif

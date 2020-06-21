@@ -157,7 +157,7 @@ class DkRenderer
 
     private:
         static constexpr unsigned int NumFramebuffers = 2;
-        static constexpr unsigned int DynamicCmdSize = 0x10000;
+        static constexpr unsigned int DynamicCmdSize = 0x20000;
 		static constexpr unsigned int FragmentUniformSize = sizeof(DKNVGfragUniforms) + 4 - sizeof(DKNVGfragUniforms) % 4;
 		static constexpr unsigned int MaxImages = 1;
 
